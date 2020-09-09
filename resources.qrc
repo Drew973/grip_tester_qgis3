@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/grip_tester" >
+        <file>icon.png</file>
+    </qresource>
+</RCC>

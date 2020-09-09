@@ -1,0 +1,17 @@
+drop function if exists refit_all;
+
+CREATE OR REPLACE FUNCTION refit_all() 
+	RETURNS void AS $$
+	
+	BEGIN
+	delete from fitted;
+	
+	insert into fitted
+	select routes.run,ch,reversed,left_skid as gn,f_line,speed,pt,vect,sec,xsp,meas_sec_ch(sec,pt) as sec_ch
+	from r inner join routes 
+	on routes.run=r.run and s<=f_line and f_line<=e;
+
+	perform calc_benchmarks();
+	 																				  
+	END;			
+$$ LANGUAGE plpgsql;

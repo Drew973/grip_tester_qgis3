@@ -1,0 +1,11 @@
+drop table if exists requested cascade;
+
+create table requested(
+sec varchar references network(sec),
+reversed bool,
+xsp varchar,
+coverage float,
+hmds varchar[] not null default '{}'::varchar[],
+note varchar,
+pk serial primary key
+);

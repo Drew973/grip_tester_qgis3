@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>fitting</title>
+    </head>
+    <body>
+        <h3 id="fitting">Fitting</h3>
+
+        <h4 id="initial_fit">Initial fit</h4>
+
+		<p> Table <a href="fitted.html">fitted</a> is created by joining  readings( <a href="r.html">table r</a> ) to the <a href="routes.html">routes table</a> <p>
+		<p> Section chainage is calculated using closest point of section to reading or start_sec_ch and end_sec_ch only. <p>
+
+		
+        <h4 id="correcting for season">Correcting for Season</h4>
+
+		<p> Where the section is marked as a benchmark in <a href="network.html">network</a> and the run is marked as a benchmark in <a href="run_info.html">run_info</a>
+		readings from fitted are inserted into the <a href="benchmarks.html">benchmarks table</a>.
+		The benchmarks table is used to calculate <a href="correction_factors.html">seasonal correction factors</a>.
+		These correction factors and season from <a href="run_info.html">run_info</a> are used to update fitted, calculating sfc from gn.
+		<p>
+
+
+        <h4 id="resizing">Resizing</h4>
+
+		<p> Table <a href="resized.html">resized</a> is made by joining <a href="fitted.html">fitted</a> to 10m <a href="pieces.html">pieces</a> of requested sections.
+			sfc is calculated as the mean sfc of all readings with section chainage within range. When there are no readings in range readings from 10m either side are used.
+		<p>
+
+
+	</body>
+</html>

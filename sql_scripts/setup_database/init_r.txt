@@ -1,0 +1,22 @@
+drop table if exists r cascade;
+
+
+create table r(
+run varchar references run_info(run) ON DELETE CASCADE,
+ch float,
+left_skid float,
+speed float,
+air_temp int,
+surface_temp int,
+pt geometry,
+vect geometry,
+ps_text varchar[],
+ps sec_dir[],
+f_line int,
+primary key(run,f_line)
+);
+
+create index on r using gist(vect);
+create index on r using gist(pt);
+create index on r(run);
+create index on r(f_line);

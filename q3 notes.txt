@@ -1,0 +1,46 @@
+bugs
+
+
+DELETE ROW CAUSES
+
+color_functions.py", line 36, in routes_color
+              if e_ch>next_s_ch: #end_ch of row>s_ch of next row
+             TypeError: '>' not supported between instances of 'NoneType' and 'int'
+
+
+
+
+file dialogs not remembering folder correctly
+
+error when wrong user/password
+
+
+
+
+ideas
+
+
+set to one way right click option for requested:
+	update network set one_way=True where sec=s;delete from requested where sec=s and reversed
+
+
+qsqltable subclass with 
+set color_function(func)
+set editable(col)
+set_sort(cols)
+
+
+order requested by multiple columns?
+
+add no_correction option to season enum
+
+Cancellable progress dialogs for refit_run,refit_runs,upload_runs
+
+write user guide.
+
+fix setup_database
+
+possibilities
+schema for tool? like
+CREATE SCHEMA grip_tester_tool;
+SET search_path TO grip_tester_tool, public;

@@ -1,0 +1,27 @@
+create view lengths as 
+select road_class,requested_length,not_surveyed,submitted from 
+(
+select 'U' as road_class,(select sum(meas_len(sec))/1000 from requested where road_class(sec)='U') as requested_length,								 
+(select sum(meas_len(sec))/1000 from requested where cardinality(hmds)=0 and road_class(sec)='U') as not_surveyed,
+(select sum(meas_len(sec))/1000 from requested where cardinality(hmds)>0 and road_class(sec)='U') as submitted,
+1 as pos
+union
+			
+select 'A' as road_class,(select sum(meas_len(sec))/1000 from requested where road_class(sec)='A') as requested_length,								 
+(select sum(meas_len(sec))/1000 from requested where cardinality(hmds)=0 and road_class(sec)='A') as not_surveyed,
+(select sum(meas_len(sec))/1000 from requested where cardinality(hmds)>0 and road_class(sec)='A') as submitted,
+2 as pos
+union
+			
+select 'B' as road_class,(select sum(meas_len(sec))/1000 from requested where road_class(sec)='B') as requested_length,								 
+(select sum(meas_len(sec))/1000 from requested where cardinality(hmds)=0 and road_class(sec)='B') as not_surveyed,
+(select sum(meas_len(sec))/1000 from requested where cardinality(hmds)>0 and road_class(sec)='B') as submitted,
+3 as pos
+union
+		
+select 'C' as road_class,(select sum(meas_len(sec))/1000 from requested where road_class(sec)='C') as requested_length,								 
+(select sum(meas_len(sec))/1000 from requested where cardinality(hmds)=0 and road_class(sec)='C') as not_surveyed,
+(select sum(meas_len(sec))/1000 from requested where cardinality(hmds)>0 and road_class(sec)='C') as submitted,
+4 as pos
+) L	
+order by pos

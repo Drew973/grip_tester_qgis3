@@ -1,0 +1,18 @@
+
+drop table if exists lengths;
+
+
+create table lengths
+(
+road_class varchar,
+requested_length float,
+not_surveyed float,
+submitted float
+);
+
+
+insert into lengths(road_class) values('U');
+insert into lengths(road_class) values('A');
+insert into lengths(road_class) values('B');
+insert into lengths(road_class) values('C');
+insert into lengths (select 'Total',sum(requested_length),sum(not_surveyed),sum(submitted) from lengths);
