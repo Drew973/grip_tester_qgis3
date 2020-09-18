@@ -1,3 +1,6 @@
+--redo resized run by deleting then reinserting all sections in run.
+--delete then insert avoids problems if pieces/req changed.
+
 
 --redo resized run by deleting then reinserting all sections in run.
 --delete then insert avoids problems if pieces/req changed.
@@ -5,7 +8,7 @@
 CREATE OR REPLACE FUNCTION resize_run(rn varchar) 
 	RETURNS void AS $$
 	declare
-		sects varchar[]=array(select distinct sec from routes where run=rn);
+		sects varchar[]=array(select distinct sec from routes where run=rn);--sections in run
 	BEGIN
 	--delete and reinsert any sections in run
 	delete from resized where sec=any(sects);
@@ -19,7 +22,14 @@ CREATE OR REPLACE FUNCTION resize_run(rn varchar)
 	update resized set (pks,sfc)=
 	(select array_agg(pk),avg(sfc) from fitted where fitted.sec=resized.sec and fitted.xsp=resized.xsp and fitted.reversed=resized.reversed and s_ch-10<=sec_ch and sec_ch<=e_ch+10	)
 	where sec=any(sects) and sfc is null;						
-						 																				  
+						 	
+
+		--recalculate benchmarks if not already done or if any sec in run is benchmark
+	if sects&&(array(select sec from network where benchmark)) then--any sec in benchmarks. &&=arrays have elements in common.
+		perform calc_benchmarks();
+	end if;
+
+	update resized set sfc= (select avg(fitted.sfc) from fitted where fitted.pk=any(pks)) where sec=any(sects); 
+																			  
 	END;			
 $$ LANGUAGE plpgsql;
-							

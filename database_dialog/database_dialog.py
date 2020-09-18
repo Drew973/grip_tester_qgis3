@@ -88,15 +88,20 @@ class database_dialog(QDialog,FORM_CLASS):
         if self.con:
             self.con.close()
         #but psycopg2 better than QSqlQuery
-        self.con=psycopg2.connect(host=self.host.text(),dbname=self.database.text(),user=self.user.text(),password=self.password.text())
-        
-        if self.con and self.db.open():
+
+
+        try:
+            self.con=psycopg2.connect(host=self.host.text(),dbname=self.database.text(),user=self.user.text(),password=self.password.text())
+            self.db.open()
+
             self.set_connected(True)
             self.cur=self.con.cursor()
             self.reconnected.emit()
-        else:
+      
+        except Exception as e:
             self.cur=None
             self.set_connected(False)
+            iface.messageBar().pushMessage('fitting tool: failed to connect: '+str(e))
           
 
     def sql(self,q,args={}):
@@ -188,8 +193,6 @@ class database_dialog(QDialog,FORM_CLASS):
             #task.run()#happens imediatly. no progressbar/dialog displayed
 
 
-
-
   
     def task_canceled(self):
         self.task=None
@@ -197,7 +200,6 @@ class database_dialog(QDialog,FORM_CLASS):
         self.progress.hide()
         self.progress.setMinimum(0)#qprogressbar will show busy indicator when min and max set to 0
         self.progress.setMaximum(0)
-
 
 
 

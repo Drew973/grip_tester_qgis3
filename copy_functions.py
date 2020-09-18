@@ -23,8 +23,8 @@ def copy_selection(tv):
                         row = index.row() - rows[0]
                         column = index.column() - columns[0]
                         table[row][column] = index.data()
-                #stream = io.StringIO()#python3
-                stream = io.BytesIO()#python2   
+                stream = io.StringIO()#python3
+                #stream = io.BytesIO()#python2   
             
                 csv.writer(stream,dialect='excel',delimiter='\t').writerows(table)
                 QApplication.clipboard().setText(stream.getvalue())
@@ -34,8 +34,8 @@ def copy_all(tv):
         model=tv.model()
        
         table=[[model.index(row,col).data() for col in range(0,model.columnCount())] for row in range(0,model.rowCount())] 
-        #stream = io.StringIO()#python3
-        stream = io.BytesIO()#python2   
+        stream = io.StringIO()#python3
+        #stream = io.BytesIO()#python2   
             
         csv.writer(stream,dialect='excel',delimiter='\t').writerows(table)
         QApplication.clipboard().setText(stream.getvalue())

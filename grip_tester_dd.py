@@ -112,21 +112,24 @@ class grip_dd(database_dialog):
 
     def refit_runs(self,runs):
 
-        queries=['select refit_run(%(run)s,False);' for r in runs]
-        args=[{'run':r} for r in runs]
-        queries.append('select calc_benchmarks();') #need to set scf through calc_benchmarks before resizing   
-        args.append(None)
+        #queries=['select refit_run(%(run)s,False);' for r in runs]
+        #args=[{'run':r} for r in runs]
+        #queries.append('select calc_benchmarks();') #need to set scf through calc_benchmarks before resizing   
+        #args.append(None)
         
-        queries+=['select resize_run(%(run)s);' for r in runs]
-        args+=[{'run':r} for r in runs]
+        #queries+=['select resize_run(%(run)s);' for r in runs]
+       # args+=[{'run':r} for r in runs]
         
    
                        
-        self.cancelable_queries(queries=queries,args=args,text='refitting all runs',sucess_message='grip tester tool:refit runs')
+        #self.cancelable_queries(queries=queries,args=args,text='refitting all runs',sucess_message='grip tester tool:refit runs')
         
         #'select refit_all();')
          #   'select resize_all();')  
 
+
+        
+        self.cancelable_queries(queries=['select refit_all();','select resize_all();'],args=None,text='refitting all runs',sucess_message='grip tester tool:refit runs')
 
 
     

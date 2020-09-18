@@ -1,4 +1,4 @@
---function to recalculate benchmarks and update sfc in fitted
+--function to recalculate benchmarks and update sfc in fitted. uses pks from resized.
 
 drop function if exists calc_benchmarks;
 
@@ -13,36 +13,10 @@ CREATE OR REPLACE FUNCTION calc_benchmarks()
 
 	update benchmarks set com=sec||'_'||xsp where s_ch=0;
 
-	--early																									 
-	--average gn where correct chainage and is benchmark and mid season
-	update benchmarks set early= (select avg(gn) from fitted where fitted.sec=benchmarks.sec and fitted.xsp=benchmarks.xsp and fitted.reversed=benchmarks.reversed and s_ch<=sec_ch and sec_ch<=e_ch and 
-			  (select season from run_info where run_info.run=fitted.run)='early' and (select benchmark from run_info where run_info.run=fitted.run));
-
-	--10m either side where no value found
-	update benchmarks set early= (select avg(gn) from fitted where fitted.sec=benchmarks.sec and fitted.xsp=benchmarks.xsp and fitted.reversed=benchmarks.reversed and s_ch-10<=sec_ch and sec_ch<=e_ch+10 and 
-			  (select season from run_info where run_info.run=fitted.run)='early' and (select benchmark from run_info where run_info.run=fitted.run))
-		where early is null;
-
-	--mid																				   
-	--average gn where correct chainage and is benchmark and mid season
-	update benchmarks set mid= (select avg(gn) from fitted where fitted.sec=benchmarks.sec and fitted.xsp=benchmarks.xsp and fitted.reversed=benchmarks.reversed and s_ch<=sec_ch and sec_ch<=e_ch and 
-			  (select season from run_info where run_info.run=fitted.run)='mid' and (select benchmark from run_info where run_info.run=fitted.run));
-
-	--10m either side where no value found
-	update benchmarks set mid= (select avg(gn) from fitted where fitted.sec=benchmarks.sec and fitted.xsp=benchmarks.xsp and fitted.reversed=benchmarks.reversed and s_ch-10<=sec_ch and sec_ch<=e_ch+10 and 
-			  (select season from run_info where run_info.run=fitted.run)='mid' and (select benchmark from run_info where run_info.run=fitted.run))
-		where mid is null;
-
-
-	--late																				   
-	--average gn where correct chainage and is benchmark and mid season
-	update benchmarks set late= (select avg(gn) from fitted where fitted.sec=benchmarks.sec and fitted.xsp=benchmarks.xsp and fitted.reversed=benchmarks.reversed and s_ch<=sec_ch and sec_ch<=e_ch and 
-			  (select season from run_info where run_info.run=fitted.run)='late' and (select benchmark from run_info where run_info.run=fitted.run));
-
-	--10m either side where no value found
-	update benchmarks set late= (select avg(gn) from fitted where fitted.sec=benchmarks.sec and fitted.xsp=benchmarks.xsp and fitted.reversed=benchmarks.reversed and s_ch-10<=sec_ch and sec_ch<=e_ch+10 and 
-			  (select season from run_info where run_info.run=fitted.run)='late' and (select benchmark from run_info where run_info.run=fitted.run))
-		where late is null;																				 																				  
+	update benchmarks set early=(select avg(gn) from fitted where fitted.pk=any(pks) and (select season from run_info where run_info.run=fitted.run)='early'),
+	mid=(select avg(gn) from fitted where fitted.pk=any(pks) and (select season from run_info where run_info.run=fitted.run)='mid'),
+	late=(select avg(gn) from fitted where fitted.pk=any(pks) and (select season from run_info where run_info.run=fitted.run)='late') 
+	from resized where resized.sec=benchmarks.sec and resized.reversed and resized.xsp=benchmarks.xsp and benchmarks.s_ch=resized.s_ch and benchmarks.e_ch=resized.e_ch;																				  
 	
 
 	--update sfc in fitted
@@ -54,8 +28,5 @@ CREATE OR REPLACE FUNCTION calc_benchmarks()
         end;
 
 	END;			
-$$ LANGUAGE plpgsql;
-																					  
---select calc_benchmarks()																					  
-																					  
+$$ LANGUAGE plpgsql;																  
 																						

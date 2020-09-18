@@ -11,13 +11,6 @@ CREATE OR REPLACE FUNCTION refit_run(rn varchar,calc_benchmarks bool=True)
 	select routes.run,ch,reversed,left_skid as gn,f_line,speed,pt,vect,sec,xsp,meas_sec_ch(sec,pt) as sec_ch
 	from r inner join routes 
 	on routes.run=r.run and s<=f_line and f_line<=e and routes.run=rn;
-
-
-	if calc_benchmarks then
-		--recalculate benchmarks if not already done or if any sec in run is benchmark
-		if 0=(select count(sec) from benchmarks) or array(select distinct sec from fitted)&&(array(select sec from network where benchmark)) then--any sec in benchmarks. &&=arrays have elements in common.
-			perform calc_benchmarks();
-		end if;
-	 end if;																		  
+																	  
 	END;			
 $$ LANGUAGE plpgsql;

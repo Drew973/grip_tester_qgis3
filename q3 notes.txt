@@ -10,9 +10,7 @@ color_functions.py", line 36, in routes_color
 
 
 
-file dialogs not remembering folder correctly
 
-error when wrong user/password
 
 
 
@@ -44,3 +42,15 @@ possibilities
 schema for tool? like
 CREATE SCHEMA grip_tester_tool;
 SET search_path TO grip_tester_tool, public;
+
+add no_correction option to season enum
+
+always use start_sec_ch and end_sec_ch.autofit can add these.
+pro:
+	better where points are same
+con:
+	roundabouts
+	adding/editing rows harder
+
+
+

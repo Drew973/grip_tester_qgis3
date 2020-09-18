@@ -5,16 +5,16 @@
         <h3 id="home">Overview</h3>
 
         <p>Postgres Database based tool for processing griptester readings.
-		<p>-<a href="fitting_to_network.html"> fits grip tester readings</a> to <a href="network.html"> network</a> to make table <a href="fitted.html">fitted</a><p>
-		<p>-uses benchmark runs and sections to correct for season<p>
-		<p>-gets readings for 10m pieces of network<p>
-		<p>-outputs hmdif files.<p>
+		<p>-fits grip tester readings</a> to <a href="network.html"> network</a> to make table <a href="fitted.html">fitted</a><p>
+		<p>-Uses benchmark runs and sections to correct for season<p>
+		<p>-Splits requested sections of network into 10m pieces and finds sfc value from fitted to make table </a> to <a href="resized.html"> resized</a> <p>
+		<p>-Makes hmdif files from table resized.<p>
 		
 
 </p>
 
         <h3 id="use">How to Use</h3>
-		<h4>under 'setup':</h4>
+		<h4>Under 'setup':</h4>
 		<p>	-connect to a database<p>
 		<p>	-<a href="database_setup.html">setup the database</a> if this has not already been done.<p>
 		<p> -the network is in table -<a href="network.html">network</a>. Import this into qgis then set network layer to this.<p>
@@ -24,16 +24,21 @@
 		<p>	-upload the readings<p>
 		<p>	-ensure information in run_info table is correct<p>
 		
-		<h4>under 'fitting':</h4>
-		<p> Create route table for each run. The 'autofit run' button will do most of this. Check rows highlighted yellow. Rows highlighted red overlap and are wrong. Use the map to check for bad gps. <p>		
+		<h4>Under 'fitting':</h4>
+		<p>Fit readings to network.(see <a href="fitting.html">fitting</a> )<p>
+ <p>		
 
 
-		<h4>under 'output':</h4>
-		<p>download hmd files<p>
-		<h4>under 'coverage':</h4>
-		<p>use 'search hmds' button to find missing requested sections. Check table r on the map to make sure the section wasn't surveyed .Then look for a reason on the map or in the summary sheet. <p>
+		<h4>Under 'output':</h4>
+		<p>Download hmd files.<p>
 
 
+		<h4>Under 'coverage':</h4>
+		<p>under requested table: <p>
+		<p>-use 'search hmds' button to find sections missing from the hmd files. Check table r on the map to make sure the section wasn't surveyed .Then look for a reason on the map or in the summary sheet. <p>
+		<p>-update the note column with the reason.<p>
+		<p> Use the tables in "View Lengths" and "View Missing Sections" to make the submission sheet. 
+		
 
     </body>
 </html>

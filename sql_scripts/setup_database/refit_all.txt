@@ -10,8 +10,6 @@ CREATE OR REPLACE FUNCTION refit_all()
 	select routes.run,ch,reversed,left_skid as gn,f_line,speed,pt,vect,sec,xsp,meas_sec_ch(sec,pt) as sec_ch
 	from r inner join routes 
 	on routes.run=r.run and s<=f_line and f_line<=e;
-
-	perform calc_benchmarks();
 	 																				  
 	END;			
 $$ LANGUAGE plpgsql;

@@ -81,6 +81,7 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
 
         self.copy_lengths_button.clicked.connect(lambda:copy_functions.copy_all(self.lengths_view))
         self.copy_missing_button.clicked.connect(lambda:copy_functions.copy_all(self.missing_view))
+        self.copy_benchmarks_button.clicked.connect(lambda:copy_functions.copy_all(self.benchmarks_view))
 
 
         
@@ -91,10 +92,14 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
                 self.connect_coverage()
                 self.connect_lengths()
                 self.connect_missing()
+                self.connect_benchmarks()
                 self.rw.get_runs()
                 self.connect_run_info()
                 self.tabs.currentChanged.connect(self.refresh_coverage)
-                self.coverage_toolbox.currentChanged.connect(self.refresh_coverage)                
+                self.coverage_toolbox.currentChanged.connect(self.refresh_coverage)
+                self.requested_model.dataChanged.connect(lambda:self.missing_model.setQuery(self.missing_model.query()))
+
+                
             else:
                 self.database_label.setText('Not Connected')
 
@@ -130,7 +135,7 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
         self.requested_view.setColumnHidden(self.requested_model.fieldIndex("pk"), True)#hide pk column
         self.requested_view.setColumnHidden(self.requested_model.fieldIndex("coverage"), True)#hide coverage column
 
-
+        
         self.show_all_button.clicked.connect(self.coverage_show_all)
         self.show_missing_button.clicked.connect(self.coverage_show_missing)
     
@@ -142,13 +147,18 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
         self.requested_view.resizeColumnsToContents()
 
 
+    def connect_benchmarks(self):
+        self.benchmarks_model=QSqlQueryModel()
+        self.benchmarks_model.setQuery("select early,mid,late,com from benchmarks order by sec,xsp,s_ch",self.dd.db)
+        self.benchmarks_view.setModel(self.benchmarks_model)
+        self.benchmarks_view.resizeColumnsToContents()
+
     def refresh_coverage(self):
-        self.requested_model.select()
         self.requested_model.select()
         self.missing_model.setQuery(self.missing_model.query())
         self.lengths_model.setQuery(self.lengths_model.query())
+        self.benchmarks_model.setQuery(self.benchmarks_model.query())
 
-        
     def connect_missing(self):
         self.missing_model=QSqlQueryModel()
         self.missing_model.setQuery("select * from missing_view",self.dd.db)
