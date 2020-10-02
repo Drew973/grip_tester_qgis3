@@ -77,6 +77,8 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
 
         self.init_requested_menu()
         self.init_missing_menu()
+        self.init_run_menu()
+        
         self.open_help_button.clicked.connect(self.open_help)        
 
         self.copy_lengths_button.clicked.connect(lambda:copy_functions.copy_all(self.lengths_view))
@@ -113,7 +115,7 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
 
     def connect_run_info(self):
         self.run_info_model=QSqlTableModel(db=self.dd.db)
-        self.run_info_model.setTable('run_info')
+        self.run_info_model.setTable('gtest.run_info')
         self.run_info_model.setSort(self.run_info_model.fieldIndex("run"),Qt.AscendingOrder)
         self.run_info_model.setEditStrategy(QSqlTableModel.OnFieldChange)
         
@@ -149,7 +151,7 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
 
     def connect_benchmarks(self):
         self.benchmarks_model=QSqlQueryModel()
-        self.benchmarks_model.setQuery("select early,mid,late,com from benchmarks order by sec,xsp,s_ch",self.dd.db)
+        self.benchmarks_model.setQuery("select early,mid,late,com from gtest.benchmarks order by sec,xsp,s_ch",self.dd.db)
         self.benchmarks_view.setModel(self.benchmarks_model)
         self.benchmarks_view.resizeColumnsToContents()
 
@@ -168,7 +170,7 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
         
     def connect_lengths(self):
         self.lengths_model=QSqlQueryModel()
-        self.lengths_model.setQuery("select * from lengths",self.dd.db)
+        self.lengths_model.setQuery("select * from gtest.lengths",self.dd.db)
         self.lengths_view.setModel(self.lengths_model)
         self.lengths_view.resizeColumnsToContents()
         #make_copyable(self.lengths_view)
@@ -307,13 +309,24 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
         self.requested_view.customContextMenuRequested.connect(self.show_requested_menu)
 
 
-#for requested view
+#for missing_view
     def init_missing_menu(self):
         self.missing_menu = QMenu()
         act=self.missing_menu.addAction('zoom to section')
         act.triggered.connect(lambda:self.select_on_network([i.data() for i in self.missing_view.selectionModel().selectedRows(1)]))# selectedRows(1) returns column 1 (sec)
         self.missing_view.setContextMenuPolicy(Qt.CustomContextMenu);
         self.missing_view.customContextMenuRequested.connect(self.show_missing_menu)
+
+
+#for run_info_view
+    def init_run_menu(self):
+        self.run_info_menu = QMenu()
+        act=self.run_info_menu.addAction('drop run')
+        act.triggered.connect(lambda:self.dd.drop_runs([str(i.data()) for i in self.run_info_view.selectionModel().selectedRows(0)]))# selectedRows(0) returns column 0 (run)
+        act.triggered.connect(self.refresh_runs)# selectedRows(0) returns column 0 (sec)
+
+        self.run_info_view.setContextMenuPolicy(Qt.CustomContextMenu);
+        self.run_info_view.customContextMenuRequested.connect(self.show_run_info_menu)
 
         
     def show_requested_menu(self,pt):
@@ -322,6 +335,15 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
 
     def show_missing_menu(self,pt):
         self.missing_menu.exec_(self.mapToGlobal(pt))
+
+
+    def show_run_info_menu(self,pt):
+        self.run_info_menu.exec_(self.mapToGlobal(pt))
+
+
+    def refresh_runs(self):
+        self.rw.get_runs()
+        self.run_info_model.select()
        
 
 #select sec on network

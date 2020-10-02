@@ -1,0 +1,31 @@
+--function to recalculate benchmarks and update sfc in fitted. uses pks from resized.
+
+drop function if exists calc_benchmarks;
+
+CREATE OR REPLACE FUNCTION calc_benchmarks() 
+	RETURNS void AS $$
+	BEGIN
+	
+	delete from gtest.benchmarks;
+
+	insert into gtest.benchmarks(sec,xsp,reversed,s_ch,e_ch,geom)
+	select sec,xsp,reversed,s_ch,e_ch,geom from gtest.pieces as p where (select gtest_benchmark from network where network.sec=p.sec);--benchmark section
+
+	update benchmarks set com=sec||'_'||xsp where s_ch=0;
+
+	update gtest.benchmarks as b set early=(select avg(gn) from gtest.fitted as f where f.pk=any(pks) and (select season from gtest.run_info where run_info.run=f.run)='early'),
+	mid=(select avg(gn) from gtest.fitted as f where f.pk=any(pks) and (select season from gtest.run_info where run_info.run=f.run)='mid'),
+	late=(select avg(gn) from gtest.fitted as f where f.pk=any(pks) and (select season from gtest.run_info where run_info.run=f.run)='late') 
+	from gtest.resized as r where r.sec=b.sec and r.reversed and r.xsp=b.xsp and b.s_ch=r.s_ch and b.e_ch=r.e_ch;																				  
+	
+
+	--update sfc in fitted
+	--correction_factors is view.
+	update gtest.fitted set sfc=case
+	when (select season from gtest.run_info where gtest.run_info.run=fitted.run)='early' then gn*(select early*grip_to_sfc from gtest.correction_factors) 
+	when (select season from gtest.run_info where gtest.run_info.run=fitted.run)='mid' then gn*(select mid*grip_to_sfc from gtest.correction_factors) 
+ 	when (select season from gtest.run_info where gtest.run_info.run=fitted.run)='late' then gn*(select late*grip_to_sfc from gtest.correction_factors) 
+        end;
+
+	END;			
+$$ LANGUAGE plpgsql;	

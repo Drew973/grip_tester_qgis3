@@ -147,7 +147,7 @@ class routes_widget(QWidget,rw):
 
     def refit_all(self):
         if self.check_connected():
-            self.dd.refit_runs(self.get_runs())  
+            self.dd.refit_runs(self.dd.get_runs())  
 
 
     def refit_run(self):
@@ -172,7 +172,7 @@ class routes_widget(QWidget,rw):
     def reconnect(self):
         self.route_model=betterTableModel(db=self.dd.db)
         self.route_model.setColorFunction(color_functions.routes_color)
-        self.route_model.setTable('routes') 
+        self.route_model.setTable(self.dd.routes_table) 
         self.route_model.setEditStrategy(QSqlTableModel.OnFieldChange)
         self.route_model.setSort(self.route_model.fieldIndex("s"),Qt.AscendingOrder)#sort by s
         
@@ -184,16 +184,11 @@ class routes_widget(QWidget,rw):
         self.get_runs()
         self.run_changed(self.run_box.currentIndex())
         
-    #sets run_box and returns list of runs
+    #sets run_box
     def get_runs(self):
-        q=QSqlQuery(db=self.dd.db)
-        q.exec_('select run from run_info order by run')
         self.run_box.clear()
-        runs=[]
-        while q.next():
-            runs.append(q.value(0))
-        self.run_box.addItems(runs)
-        return runs
+        self.run_box.addItems(self.dd.get_runs())
+
         
     def save_route(self):
         s=file_dialogs.save_file_dialog('.csv',default_name=self.run_box.currentText())

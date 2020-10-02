@@ -1,10 +1,7 @@
-drop table if exists fitted;
-
 --only really need run,f_line,sec,xsp,reversed,sec_ch,sfc
 --can look up rest from r
 
-
-create table fitted (
+create table if not exists gtest.fitted (
 run varchar,
 ch float,
 reversed bool,
@@ -20,8 +17,8 @@ sfc float,
 pk serial primary key
 );
 
-create index on fitted(run);
-create index on fitted(sec);
-create index on fitted(reversed);
-create index on fitted(xsp);
-create index on fitted(sec_ch);		
+create index on gtest.fitted(run);
+create index on gtest.fitted(sec);
+create index on gtest.fitted(reversed);
+create index on gtest.fitted(xsp);
+create index on gtest.fitted(sec_ch);		

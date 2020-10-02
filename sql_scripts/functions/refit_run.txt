@@ -1,0 +1,15 @@
+
+
+CREATE OR REPLACE FUNCTION gtest.refit_run(rn varchar,calc_benchmarks bool=True) 
+	RETURNS void AS $$
+	
+	BEGIN
+	delete from gtest.fitted where run=rn;
+	
+	insert into gtest.fitted
+	select gtest.routes.run,ch,reversed,left_skid as gn,f_line,speed,pt,vect,sec,xsp,meas_sec_ch(sec,pt) as sec_ch
+	from gtest.readings inner join gtest.routes 
+	on gtest.routes.run=gtest.readings.run and s<=f_line and f_line<=e and gtest.routes.run=rn;
+																	  
+	END;			
+$$ LANGUAGE plpgsql;

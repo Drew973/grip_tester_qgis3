@@ -1,7 +1,5 @@
-drop table if exists benchmarks cascade;
 
-
-create table benchmarks(
+create table if not exists benchmarks(
 sec varchar references network(sec),
 xsp varchar,
 reversed bool,

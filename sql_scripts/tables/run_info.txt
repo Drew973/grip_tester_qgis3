@@ -1,0 +1,8 @@
+
+create table if not exists gtest.run_info(
+run varchar,
+survey_date date,
+benchmark bool default False,
+season test_season default '',
+primary key(run)
+)

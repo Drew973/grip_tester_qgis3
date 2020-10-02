@@ -1,0 +1,31 @@
+create extension if not exists postgis;
+create schema if not exists gtest;
+set search_path to gtest,public;
+
+types/types.sql;
+
+tables/network.txt;
+functions/network_functions.sql;
+functions/array_functions.sql;
+functions/vector_functions.sql;
+functions/auto_route_functions.sql;
+
+tables/run_info.txt;
+tables/routes.txt;
+tables/readings.txt;
+tables/requested.txt;
+tables/fitted.txt;
+tables/resized.txt;
+tables/benchmarks.txt;
+
+views/pieces.sql;
+views/correction_factors.sql;
+views/missing_view.sql;
+
+functions/calc_benchmarks.txt;
+functions/refit_all.txt;
+functions/resize_run.txt;
+functions/refit_run.txt;
+functions/resize_all.txt;
+functions/update_readings.sql;
+functions/autofit_run.sql;

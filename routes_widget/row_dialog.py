@@ -98,10 +98,10 @@ class row_dialog(QDialog,FORM_CLASS):
             #self.model.revertAll()
         #    self.dd.db.rollback()
 
-    
+    #broken
     def drop(self):
-        self.dd.sql3("delete from routes where sec=%(sec)s and xsp=%(xsp)s and reversed=%(rev)s and run=%(run)s and s=%(s)d and e=%(e)d and note=%(note)s",self.get())
-
+        #self.dd.sql3("delete from routes where sec=%(sec)s and xsp=%(xsp)s and reversed=%(rev)s and run=%(run)s and s=%(s)d and e=%(e)d and note=%(note)s",self.get())
+        pass
         
 
     def sec_from_selected(self):

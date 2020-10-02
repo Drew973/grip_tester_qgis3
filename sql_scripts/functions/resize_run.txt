@@ -25,7 +25,7 @@ CREATE OR REPLACE FUNCTION resize_run(rn varchar)
 						 	
 
 		--recalculate benchmarks if not already done or if any sec in run is benchmark
-	if sects&&(array(select sec from network where benchmark)) then--any sec in benchmarks. &&=arrays have elements in common.
+	if sects&&(array(select sec from network where gtest_benchmark)) then--any sec in benchmarks. &&=arrays have elements in common.
 		perform calc_benchmarks();
 	end if;
 

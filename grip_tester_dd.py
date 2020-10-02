@@ -6,14 +6,18 @@ from psycopg2.extras import DictCursor,execute_batch
 from os import path
 
 
-
 '''
 subclass of database_dialog specific to scrim processor.
 
 '''
 
+SCHEMA='gtest'
+
 class grip_dd(database_dialog):
 
+    def __init__(self,parent=None):
+        self.routes_table='gtest.routes'
+        database_dialog.__init__(self,parent)
 
     def upload_s10(self,s10):
         pass
@@ -50,28 +54,32 @@ class grip_dd(database_dialog):
             labs=[{'xsp':xsp,'sec':sec.vals['LABEL'],'hmd':f} for sec in h.sects.values() for xsp in sec.xsp_vals()]#dict for each sec+xsp in hmd
             #array_append(null,val) gives null. added not null constraint to hmds col.
             execute_batch(self.cur,'update requested set hmds=array_append(hmds,%(hmd)s) where sec=%(sec)s and xsp=%(xsp)s and not %(hmd)s=any(hmds);',labs)
-       # self.sql('select update_lengths();')
 
 
     #update coverage column of table req
     def update_coverage(self):
-        self.sql('update requested set coverage=coverage(sec,reversed,xsp)')
+        self.sql('update gtest.requested set coverage=gtest.coverage(sec,reversed,xsp)')
 
 
+#reads setup.txt, seperated by ;. If file then runs script otherwise run line.
     def setup_database(self):
-        self.sql('create extension if not exists postgis')
-
-        folder=path.join(path.dirname(__file__),'sql_scripts','setup_database')
+        folder=path.join(path.dirname(__file__),'sql_scripts')
         with open(path.join(folder,'setup.txt')) as f:
             for c in f.read().split(';'):
                 com=c.strip()
+                f=path.join(folder,com)
                 if com:
-                    self.sql_script(path.join(folder,com))
-      
+                    if path.exists(f):
+                        print(f)
+                        self.sql_script(f)
+                    else:
+                        print(com)
+                        self.sql(com)
+                        
 
     def autofit_run(self,run):
-        self.sql_script(path.join(path.dirname(__file__),'sql_scripts','autofit_run.sql'),{'run':run})
-
+        self.sql('select gtest.autofit_run(%(run)s)',{'run':run})
+        
     
     def upload_run_csv(self,run):
         try:
@@ -79,9 +87,9 @@ class grip_dd(database_dialog):
             date=get_date(run)
 
             with self.con:
-                self.cur.execute("insert into run_info(run,survey_date) values (%(ref)s,to_date(%(date)s,'dd/MM/yyyy'))",{'ref':ref,'ref2':ref,'date':date})
+                self.cur.execute("insert into gtest.run_info(run,survey_date) values (%(ref)s,to_date(%(date)s,'dd/MM/yyyy'))",{'ref':ref,'ref2':ref,'date':date})
                 
-                q='insert into r(run,ch,left_skid,speed,f_line,pt) values(%(run)s,%(ch)s,%(left_skid)s,%(speed)s,%(f_line)s,ST_transform(ST_SetSRID(ST_makePoint(%(lon)s,%(lat)s),4326),27700));'
+                q='insert into gtest.readings(run,ch,left_skid,speed,f_line,pt) values(%(run)s,%(ch)s,%(left_skid)s,%(speed)s,%(f_line)s,ST_transform(ST_SetSRID(ST_makePoint(%(lon)s,%(lat)s),4326),27700));'
 
                 with open(run,'r') as f:
                      vals = [read_line(line,i+1,ref) for i,line in enumerate(f.readlines())]
@@ -90,7 +98,7 @@ class grip_dd(database_dialog):
                 execute_batch(self.cur,q,vals)
             #self.con.commit()
 
-            self.sql_script(path.join(path.dirname(__file__),'sql_scripts','update_run.sql'),{'run':ref})#run is name of run in run_info
+            self.sql('select gtest.update_readings(%(run)s)',{'run':ref}) 
             
             return True
             
@@ -99,38 +107,24 @@ class grip_dd(database_dialog):
             return e
 
 
+    def drop_runs(self,runs):
+        runs='{'+','.join(runs)+'}'
+        self.sql('delete from gtest.run_info where run =any(%(runs)s::varchar[])',{'runs':runs})
+
 
     def refit_run(self,run):
         #self.cancelable_task(self.sql,{'q':'select refit_run(%(run)s);','args':run},'grip tester tool:refitting run')
-
-        q='select refit_run(%(run)s);select resize_run(%(run)s);'
-        
+        q='select gtest.refit_run(%(run)s);select gtest.resize_run(%(run)s);'        
         self.cancelable_query(q=q,args={'run':run},text='refitting run:'+run,sucess_message='grip tester tool:refit run:'+run)
-        #self.sql('select refit_run(%(run)s);',run)
-        #self.sql('select resize_run(%(run)s);',run)
 
 
-    def refit_runs(self,runs):
-
-        #queries=['select refit_run(%(run)s,False);' for r in runs]
-        #args=[{'run':r} for r in runs]
-        #queries.append('select calc_benchmarks();') #need to set scf through calc_benchmarks before resizing   
-        #args.append(None)
-        
-        #queries+=['select resize_run(%(run)s);' for r in runs]
-       # args+=[{'run':r} for r in runs]
-        
-   
-                       
-        #self.cancelable_queries(queries=queries,args=args,text='refitting all runs',sucess_message='grip tester tool:refit runs')
-        
-        #'select refit_all();')
-         #   'select resize_all();')  
+    def refit_runs(self,runs):        
+        self.cancelable_queries(queries=['select gtest.refit_all();','select gtest.resize_all();'],args=None,text='refitting all runs',sucess_message='grip tester tool:refit runs')
 
 
-        
-        self.cancelable_queries(queries=['select refit_all();','select resize_all();'],args=None,text='refitting all runs',sucess_message='grip tester tool:refit runs')
-
+    def get_runs(self):
+        res=self.sql('select run from gtest.run_info order by run',ret=True)
+        return [r['run'] for r in res]
 
     
 #parse line of run csv
@@ -150,20 +144,4 @@ def get_date(p):
             if i==2:
                 return line.split(',')[18]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
+       

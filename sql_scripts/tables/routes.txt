@@ -1,6 +1,4 @@
-drop table if exists routes cascade;
-
-create table routes(
+create table if not exists routes(
 sec varchar references network(sec) ON DELETE CASCADE ON UPDATE CASCADE,
 reversed bool,
 xsp varchar,
@@ -15,9 +13,9 @@ end_sec_ch float,
 primary key(run,s,e)
 );
 
-create index routes_run on routes(run);
-create index routes_sec on routes(sec);
-create index routes_xsp on routes(xsp);
-create index routes_rev on routes(reversed);
-create index routes_s on routes(s);
-create index routes_e on routes(e);
+create index if not exists run on routes(run);
+create index if not exists sec on routes(sec);
+create index if not exists xsp on routes(xsp);
+create index if not exists rev on routes(reversed);
+create index if not exists s on routes(s);
+create index if not exists e on routes(e);
