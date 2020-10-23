@@ -14,7 +14,7 @@ CREATE OR REPLACE FUNCTION gtest.resize_all()
 	update gtest.resized set pks=array( select pk from gtest.fitted as f where f.sec=resized.sec and f.xsp=resized.xsp and f.reversed=resized.reversed and s_ch-10<=sec_ch and sec_ch<=e_ch+10) where cardinality(pks)=0;
 
 	perform gtest.calc_benchmarks();
-	update resized set sfc= (select avg(fitted.sfc) from gtest.fitted where fitted.pk=any(pks));
+	update gtest.resized set sfc= (select avg(fitted.sfc) from gtest.fitted where fitted.pk=any(pks));
 																		  
 	END;			
 $$ LANGUAGE plpgsql;

@@ -10,7 +10,7 @@
 name=Grip Tester
 qgisMinimumVersion=3.0
 description=plugin for processing grip tester readings
-version=3.01
+version=3.02
 author=Drew
 email=drew.bennett@ptsinternational.co.uk
 

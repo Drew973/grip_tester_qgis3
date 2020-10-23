@@ -127,7 +127,7 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
        # self.requested_model = QSqlTableModel(db=self.dd.db)
         self.requested_model=betterTableModel(db=self.dd.db)
         self.requested_model.setEditStrategy(QSqlTableModel.OnFieldChange)        
-        self.requested_model.setTable('requested')
+        self.requested_model.setTable('gtest.requested')
         self.requested_model.setEditable(False)#set all cols uneditable
         self.requested_model.setColEditable(self.requested_model.fieldIndex("note"),True)#make note col editable
 
@@ -163,7 +163,7 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
 
     def connect_missing(self):
         self.missing_model=QSqlQueryModel()
-        self.missing_model.setQuery("select * from missing_view",self.dd.db)
+        self.missing_model.setQuery("select * from gtest.missing_view",self.dd.db)
         self.missing_view.setModel(self.missing_model)
         self.missing_view.resizeColumnsToContents()
 

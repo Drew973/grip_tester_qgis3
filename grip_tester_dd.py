@@ -39,7 +39,7 @@ class grip_dd(database_dialog):
     def search_hmds(self,hmds,reset=False):
 
         if reset:
-            self.sql("update requested set hmds='{}'::varchar[];")
+            self.sql("update gtest.requested set hmds='{}'::varchar[];")
         
         for h in hmds:
             self.search_hmd(h)
@@ -53,7 +53,7 @@ class grip_dd(database_dialog):
         with self.con:
             labs=[{'xsp':xsp,'sec':sec.vals['LABEL'],'hmd':f} for sec in h.sects.values() for xsp in sec.xsp_vals()]#dict for each sec+xsp in hmd
             #array_append(null,val) gives null. added not null constraint to hmds col.
-            execute_batch(self.cur,'update requested set hmds=array_append(hmds,%(hmd)s) where sec=%(sec)s and xsp=%(xsp)s and not %(hmd)s=any(hmds);',labs)
+            execute_batch(self.cur,'update gtest.requested set hmds=array_append(hmds,%(hmd)s) where sec=%(sec)s and xsp=%(xsp)s and not %(hmd)s=any(hmds);',labs)
 
 
     #update coverage column of table req

@@ -21,6 +21,8 @@ tables/benchmarks.txt;
 views/pieces.sql;
 views/correction_factors.sql;
 views/missing_view.sql;
+views/lengths.txt;
+
 
 functions/calc_benchmarks.txt;
 functions/refit_all.txt;

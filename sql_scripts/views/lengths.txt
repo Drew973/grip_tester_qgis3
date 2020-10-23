@@ -35,4 +35,3 @@ select 'Total' as road_class,(select sum(meas_len(sec))/1000 from requested),
 ) L	
 order by pos;
  
-select * from lengths;
