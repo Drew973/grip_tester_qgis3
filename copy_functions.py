@@ -1,10 +1,10 @@
 import io
 import csv
 
-try:
-        from PyQt5.QtWidgets import QApplication
-except:
-        from PyQt4.QtGui import QApplication
+from PyQt5.QtCore import Qt
+
+from PyQt5.QtWidgets import QApplication
+#from PyQt4.QtGui import QApplication
 
 '''
 functions for copying contents of QtableView
@@ -29,13 +29,28 @@ def copy_selection(tv):
                 csv.writer(stream,dialect='excel',delimiter='\t').writerows(table)
                 QApplication.clipboard().setText(stream.getvalue())
 
+
 #copy all items of QtableView tv to clipboard in excel compatible format
 def copy_all(tv):
         model=tv.model()
-       
-        table=[[model.index(row,col).data() for col in range(0,model.columnCount())] for row in range(0,model.rowCount())] 
+        table=[[parse(model.index(row,col).data(role=Qt.DisplayRole)) for col in range(0,model.columnCount())] for row in range(0,model.rowCount())]
+
+
+        #null is PyQt5.QtCore.QVariant 
+      #  print(table)
         stream = io.StringIO()#python3
         #stream = io.BytesIO()#python2   
             
         csv.writer(stream,dialect='excel',delimiter='\t').writerows(table)
         QApplication.clipboard().setText(stream.getvalue())
+
+
+
+#ugly fix for null qvariant becoming 'NULL'
+#returns empty string if v is null qvariant otherwise v
+def parse(v):
+        s=str(v)
+        if s=='NULL':
+                return ''
+        else:
+                return s

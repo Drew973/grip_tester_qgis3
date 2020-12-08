@@ -28,7 +28,7 @@ from PyQt5.QtWidgets import QMenuBar,QDockWidget,QMenu
 from PyQt5.QtGui import QDesktopServices
 
 from .routes_widget.routes_widget import routes_widget
-from .routes_widget.select_section import select_sections
+from .routes_widget.layer_functions import select_sections
 from .routes_widget.better_table_model import betterTableModel
 
 
@@ -68,7 +68,7 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
 
         self.search_hmds_button.clicked.connect(self.search_hmds)
           
-        self.rw=routes_widget(self,self.dd,self.readings_box,self.network_box,self.run_fieldbox,self.f_line_fieldbox,self.sec_fieldbox)
+        self.rw=routes_widget(self,self.dd,'gtest.routes',self.readings_box,self.network_box,self.run_fieldbox,self.f_line_fieldbox,self.sec_fieldbox)
 
         self.rw_placeholder.addWidget(self.rw)
         #self.tabs.insertTab(2,self.rw,'Fitting')
@@ -84,18 +84,19 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
         self.copy_lengths_button.clicked.connect(lambda:copy_functions.copy_all(self.lengths_view))
         self.copy_missing_button.clicked.connect(lambda:copy_functions.copy_all(self.missing_view))
         self.copy_benchmarks_button.clicked.connect(lambda:copy_functions.copy_all(self.benchmarks_view))
-
+        self.upload_folder_button.clicked.connect(self.upload_folder)
 
         
     def connect(self):
         if self.dd.exec_():
             if self.dd.connected:
                 self.database_label.setText('Connected to %s'%(self.dd.db.databaseName()))
+                self.dd.sql('set search_path to gtest,public;')
                 self.connect_coverage()
                 self.connect_lengths()
                 self.connect_missing()
                 self.connect_benchmarks()
-                self.rw.get_runs()
+                self.rw.refresh_runs()
                 self.connect_run_info()
                 self.tabs.currentChanged.connect(self.refresh_coverage)
                 self.coverage_toolbox.currentChanged.connect(self.refresh_coverage)
@@ -136,22 +137,34 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
         self.requested_view.setModel(self.requested_model)
         self.requested_view.setColumnHidden(self.requested_model.fieldIndex("pk"), True)#hide pk column
         self.requested_view.setColumnHidden(self.requested_model.fieldIndex("coverage"), True)#hide coverage column
-
         
-        self.show_all_button.clicked.connect(self.coverage_show_all)
-        self.show_missing_button.clicked.connect(self.coverage_show_missing)
-    
-        if self.show_missing_button.isChecked():
-            self.coverage_show_missing()
-        else:
-            self.coverage_show_all()
+        #self.show_all_button.clicked.connect(self.coverage_show_all)
+        #self.show_missing_button.clicked.connect(self.coverage_show_missing)
+        self.show_missing_button.clicked.connect(self.filter_requested)
+        self.show_all_button.clicked.connect(self.filter_requested)
+        self.partly_missing_button.clicked.connect(self.filter_requested)
+
+        self.filter_requested()
 
         self.requested_view.resizeColumnsToContents()
 
 
+    def filter_requested(self):
+        if self.show_missing_button.isChecked():
+            self.requested_model.setFilter("cardinality(hmds)=0")
+
+        if self.show_all_button.isChecked():
+            self.requested_model.setFilter('')
+
+        if self.partly_missing_button.isChecked():
+            self.requested_model.setFilter('cardinality(hmds)>0 and (select count (sec) from gtest.resized where gtest.resized.sec=gtest.requested.sec and gtest.resized.reversed=gtest.requested.reversed and sfc is null)>1')
+                
+        self.requested_model.select()
+
+
     def connect_benchmarks(self):
         self.benchmarks_model=QSqlQueryModel()
-        self.benchmarks_model.setQuery("select early,mid,late,com from gtest.benchmarks order by sec,xsp,s_ch",self.dd.db)
+        self.benchmarks_model.setQuery("select early,mid,late,com from gtest.benchmarks_view order by sec,xsp,s_ch",self.dd.db)
         self.benchmarks_view.setModel(self.benchmarks_model)
         self.benchmarks_view.resizeColumnsToContents()
 
@@ -176,16 +189,6 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
         #make_copyable(self.lengths_view)
 
         
-    def coverage_show_all(self):
-        self.requested_model.setFilter('')
-        self.requested_model.select()
-        
-        
-    def coverage_show_missing(self):
-        self.requested_model.setFilter("cardinality(hmds)=0")
-        self.requested_model.select()
-
-        
     def check_connected(self):
         if self.dd.con:
             return True
@@ -199,7 +202,8 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
             files=file_dialogs.load_files_dialog('.csv','upload csv')
             if files:
                 for f in files:
-                    r=self.dd.upload_run_csv(f)
+                    #r=self.dd.upload_run_csv(f)
+                    r=self.dd.upload_run(f)
                     if r==True:
                         self.upload_log.appendPlainText('sucessfully uploaded %s'%(f))
                     else:
@@ -209,8 +213,14 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
                     #processEvents()
                
                 self.run_info_model.select()
-                self.rw.get_runs()
+                self.rw.refresh_runs()
             
+
+    def upload_folder(self):
+        folder=file_dialogs.load_directory_dialog('.csv','upload all .csv in directory')
+        if folder:
+            self.dd.upload_runs(file_dialogs.filter_files(folder,'.csv'))
+                
             
         
     def closeEvent(self, event):
@@ -244,7 +254,7 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
                     except Exception as e:
                         iface.messageBar().pushMessage('fitting tool: error uploading zm3:'+self.zm3.text()+': '+str(e))
                         
-                self.rw.get_runs()
+                self.rw.refresh_runs()
                 
     
     def set_s10(self):
@@ -303,11 +313,15 @@ class grip_testerDockWidget(QDockWidget, FORM_CLASS):
 #for requested view
     def init_requested_menu(self):
         self.requested_menu = QMenu()
-        act=self.requested_menu.addAction('zoom to section')
-        act.triggered.connect(lambda:self.select_on_network([i.data() for i in self.requested_view.selectionModel().selectedRows()]))
+        requested_zoom_act=self.requested_menu.addAction('zoom to section')
+        requested_zoom_act.triggered.connect(lambda:self.select_on_network([i.data() for i in self.requested_view.selectionModel().selectedRows()]))
+
+        copy_all_requested_act=self.requested_menu.addAction('copy all rows to clipboard')
+        copy_all_requested_act.triggered.connect(lambda:copy_functions.copy_all(self.requested_view))
+
         self.requested_view.setContextMenuPolicy(Qt.CustomContextMenu);
         self.requested_view.customContextMenuRequested.connect(self.show_requested_menu)
-
+        
 
 #for missing_view
     def init_missing_menu(self):

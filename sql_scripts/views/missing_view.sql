@@ -28,7 +28,30 @@ CREATE OR REPLACE FUNCTION gtest.make_comment(sect varchar)
 $$ LANGUAGE plpgsql;
 										
 
-drop view if exists gtest.missing_view cascade;
-create view gtest.missing_view as select road_class(sec) as road_class,sec as section,right(left(array_agg(xsp)::varchar,-1),-1) as direction,gtest.make_comment(sec) as Comment from gtest.requested where cardinality(hmds)=0 group by sec;			   
+--drop view if exists gtest.missing_view cascade;
+--create view gtest.missing_view as select road_class(sec) as road_class,sec as section,right(left(array_agg(xsp)::varchar,-1),-1) as direction,gtest.make_comment(sec) as Comment from gtest.requested where cardinality(hmds)=0 group by sec;			   
 --view for making submission sheet
+
+
+
+
+drop view if exists missing_view;
+create view missing_view as
+
+drop view if exists missing_view;
+create view missing_view as
+
+select road_class
+,sec as section,
+array_to_string(xsps,',') as direction
+,case when cardinality(notes)=1 then notes[1]
+	else long_com
+	end as comment
+																									   
+from (select road_class(sec) as road_class
+	  ,sec
+	  ,array_agg(xsp) as xsps
+	  ,ARRAY_TO_STRING(array_agg(xsp||':'||note),'. ') as long_com
+	  ,array_distinct(array_agg(note)) as notes
+	  from requested where cardinality(hmds)=0 group by sec) a;			   
 

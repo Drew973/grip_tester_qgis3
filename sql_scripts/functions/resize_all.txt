@@ -1,5 +1,5 @@
 
-CREATE OR REPLACE FUNCTION gtest.resize_all() 
+CREATE OR REPLACE FUNCTION gtest.resize_all(tol float=10) 
 	RETURNS void AS $$
 	
 	BEGIN
@@ -11,7 +11,8 @@ CREATE OR REPLACE FUNCTION gtest.resize_all()
 	from gtest.pieces as pieces left join gtest.fitted as fitted on fitted.sec=pieces.sec and fitted.xsp=pieces.xsp and fitted.reversed=pieces.reversed and s_ch<=sec_ch and sec_ch<=e_ch
 	group by pieces.sec,pieces.reversed,pieces.xsp,s_ch,e_ch,geom;
 
-	update gtest.resized set pks=array( select pk from gtest.fitted as f where f.sec=resized.sec and f.xsp=resized.xsp and f.reversed=resized.reversed and s_ch-10<=sec_ch and sec_ch<=e_ch+10) where cardinality(pks)=0;
+	update gtest.resized set pks=array( select pk from gtest.fitted as f where f.sec=resized.sec and f.xsp=resized.xsp and f.reversed=resized.reversed and s_ch-tol<=sec_ch and sec_ch<=e_ch+tol) where empty_or_null(pks);
+	--pks is {null} where no readings
 
 	perform gtest.calc_benchmarks();
 	update gtest.resized set sfc= (select avg(fitted.sfc) from gtest.fitted where fitted.pk=any(pks));
@@ -20,3 +21,5 @@ CREATE OR REPLACE FUNCTION gtest.resize_all()
 $$ LANGUAGE plpgsql;
 
 
+
+ALTER FUNCTION gtest.resize_all()  SET search_path = gtest;

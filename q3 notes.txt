@@ -10,12 +10,10 @@ color_functions.py", line 36, in routes_color
 
 
 
-
-
-
-
-
 ideas
+
+
+seperate coverage into lengths&missing sections and benchmarks
 
 
 set to one way right click option for requested:
@@ -53,4 +51,6 @@ con:
 	adding/editing rows harder
 
 
+
+doing benchmarks in view. can delete table.
 

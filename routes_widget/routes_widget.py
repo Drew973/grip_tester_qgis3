@@ -1,17 +1,15 @@
 from qgis.PyQt.QtWidgets import QWidget
 
-from .select_section import select_sections,ch_to_id,zoom_to_selected
 from .better_table_model import betterTableModel
 
-from . import color_functions,table_view_to_csv,upload_routes_csv,file_dialogs
-from .row_dialog import row_dialog,row_to_dict
+from . import color_functions,table_view_to_csv,upload_routes_csv,file_dialogs,layer_functions
 
 from qgis.PyQt.QtSql import QSqlTableModel
 from qgis.PyQt.QtCore import Qt
 from qgis.utils import iface
 #from PyQt5.QtGui import QMenu
 from PyQt5.QtWidgets import QMenuBar,QMenu
-
+from qgis.PyQt.QtCore import pyqtSignal
 
 import os
 
@@ -21,6 +19,15 @@ from qgis.core import QgsMapLayerProxyModel
 from qgis.PyQt import uic,QtGui
 from qgis.PyQt.QtSql import QSqlQuery
 
+
+from PyQt5.QtWidgets import QComboBox
+# makes qComboBox b searchable
+def make_searchable(b):
+    b.setEditable(True)
+    b.setInsertPolicy(QComboBox.NoInsert)
+    b.lineEdit().editingFinished.connect(lambda:b.setCurrentText(b.itemText(b.currentIndex())))
+    #editing finished triggered when lineEdit loses focus.
+   
 
 
 def fixHeaders(path):
@@ -45,12 +52,17 @@ columns run varchar,f_line int,sec varchar,reversed bool,xsp varchar.
 
 '''
 
-class routes_widget(QWidget,rw):   
+class routes_widget(QWidget,rw):
+    refit = pyqtSignal()
+
+    
     #readings_box and network box are pre existing qgsmapLayerComboboxes. fieldboxes are preexisting. dd is database dialog.
-    def __init__(self,parent,dd,readings_box,network_box,run_fieldbox,f_line_fieldbox,sec_fieldbox):
+    def __init__(self,parent,dd,table,readings_box,network_box,run_fieldbox,f_line_fieldbox,sec_fieldbox):
         super(QWidget,self).__init__(parent)
         self.setupUi(self)
         self.dd=dd
+        self.table=table
+        
         self.run_fieldbox=run_fieldbox
         self.f_line_fieldbox=f_line_fieldbox
         self.sec_fieldbox=sec_fieldbox
@@ -58,8 +70,7 @@ class routes_widget(QWidget,rw):
         self.network_box=network_box
         self.run_fieldbox=run_fieldbox
         self.readings_box=readings_box
-
-        
+      
         self.readings_box.layerChanged.connect(lambda layer:set_to(layer=layer,fb=self.run_fieldbox,name='run'))
         self.readings_box.layerChanged.connect(lambda layer:set_to(layer=layer,fb=self.f_line_fieldbox,name='f_line'))
         self.network_box.layerChanged.connect(lambda layer:set_to(layer=layer,fb=self.sec_fieldbox,name='sec'))
@@ -71,66 +82,155 @@ class routes_widget(QWidget,rw):
         self.network_box.setFilters(QgsMapLayerProxyModel.LineLayer)
         self.readings_box.setFilters(QgsMapLayerProxyModel.LineLayer|QgsMapLayerProxyModel.PointLayer)
 
-        self.add_button.clicked.connect(self.add_row_dlg)
-        self.edit_button.clicked.connect(self.edit_row)
-        self.autofit_run_button.clicked.connect(self.autofit_run)
-        
         self.run_box.currentIndexChanged.connect(self.run_changed)
 
         self.dd.reconnected.connect(self.reconnect)
-        dd.data_changed.connect(self.get_runs)
-        self.refit_run_button.clicked.connect(self.refit_run)
-        self.refit_all_button.clicked.connect(self.refit_all)
-        
+        dd.data_changed.connect(self.refresh_runs)
+
+        self.init_top_menu()
+
+        self.filter_layer_button.clicked.connect(lambda:layer_functions.filter_by_run(self.readings_box.currentLayer(),self.run_fieldbox.currentField(),self.run_box.currentText()))
+ 
+        self.init_rows_menu()
+        set_layer_box_to(self.network_box,'network')
+        set_layer_box_to(self.readings_box,'readings')
+        make_searchable(self.run_box)        
+
+
+
+    def init_top_menu(self):
         self.top_menu=QMenuBar()
         self.layout().setMenuBar(self.top_menu)
-        
-        download_menu= self.top_menu.addMenu('Download...')
-        self.download_route_act=download_menu.addAction('Download route as csv...')
-        self.download_all_act=download_menu.addAction('Download all routes as csv...')
 
+        download_menu= self.top_menu.addMenu('Download')
+        self.download_route_act=download_menu.addAction('Download route as csv...')
         self.download_route_act.triggered.connect(self.save_route)
+        self.download_all_act=download_menu.addAction('Download all routes as csv...')
         self.download_all_act.triggered.connect(self.save_routes)
 
-        upload_menu= self.top_menu.addMenu('Upload...')
+        upload_menu= self.top_menu.addMenu('Upload')
         self.upload_act=upload_menu.addAction('Upload routes csv(s)...')
         self.upload_act.triggered.connect(self.upload_routes)
 
-
+        refit_menu= self.top_menu.addMenu('Process')
+        refit_menu.setToolTipsVisible(True)
         
-        self.init_rows_menu()
+        self.refit_run_act=refit_menu.addAction('Process run')
+        self.refit_run_act.setToolTip('(Re)make fitted and resized tables for this run.')
+        self.refit_run_act.triggered.connect(self.refit_run)
         
-        i=self.readings_box.findText('r')
-        if i!=-1:
-            self.readings_box.setLayer(self.readings_box.layer(i))
+        self.refit_all_act=refit_menu.addAction('Process all runs')
+        self.refit_all_act.setToolTip('(Re)make fitted and resized tables for all runs.')
+        self.refit_all_act.triggered.connect(self.refit_all)
+    
+        automake_menu= self.top_menu.addMenu('Automake')
+        automake_menu.setToolTipsVisible(True)
 
-        i=self.network_box.findText('network')
-        if i!=-1:
-            self.network_box.setLayer(network_box.layer(i))
-            
+        self.automake_act=automake_menu.addAction('Automake run')
+        self.automake_act.setToolTip("Automatically adds rows to route with note of 'Auto'. Keeps rows without note of 'Auto'. Will probabaly contain some mistakes.Likely to miss short (under ~30m) sections.")
+        self.automake_act.triggered.connect(self.automake_run)                
+
+        self.remove_slips_act=automake_menu.addAction('Remove slip roads')
+        self.remove_slips_act.setToolTip("remove slip roads from this route")
+        self.remove_slips_act.triggered.connect(self.remove_slips)    
+
 
     def init_rows_menu(self):
         self.rows_menu = QMenu()
+        self.rows_menu.setToolTipsVisible(True)
+        
         self.route_view.setContextMenuPolicy(Qt.CustomContextMenu);
         self.route_view.customContextMenuRequested.connect(self.show_rows_menu)
 
         self.select_on_layers_act=self.rows_menu.addAction('select on layers')
+        self.select_on_layers_act.setToolTip('select these rows on network and/or readings layers.')
         self.select_on_layers_act.triggered.connect(self.select_on_layers)
 
         self.select_from_layers_act=self.rows_menu.addAction('select from layers')
+        self.select_from_layers_act.setToolTip('set selected rows from selected features of readings layer.')
         self.select_from_layers_act.triggered.connect(self.select_from_layers)
 
         self.delete_rows_act=self.rows_menu.addAction('delete selected rows')
         self.delete_rows_act.triggered.connect(self.drop_selected_rows)
 
+        self.add_menu=self.rows_menu.addMenu('add new row')
+        self.row_after_act=self.add_menu.addAction('add empty row after last selected')
+        self.row_after_act.triggered.connect(self.add_empty_row)
+
+        self.add_from_feats_act=self.add_menu.addAction('add new row from selected features')
+        self.add_from_feats_act.triggered.connect(self.add_from_feats)
+
+
+    def add_empty_row(self):
+        ls=self.last_selected_row()
+        if not ls:
+            ls=0
+
+        d={'run':self.current_run()}
+        s_line=self.route_model.index(ls,self.route_model.fieldIndex('e_line')).data()  
+        if s_line:
+            d.update({'s_line':s_line})
+
+        self.dd.insert_into_routes(d)
+        self.route_model.select()
         
+
+    def last_selected_row(self):
+        rows=[r.row() for r in self.route_view.selectionModel().selectedRows()]
+        if rows:
+            return min(rows)
+      
     def show_rows_menu(self,pt):
         self.rows_menu.exec_(self.mapToGlobal(pt))
 
 
     def select_from_layers(self):
-        pass
+        sects=[f[self.sec_fieldbox.currentField()] for f in self.network_box.currentLayer().selectedFeatures()]
+        f_lines=[f[self.f_line_fieldbox.currentField()] for f in self.readings_box.currentLayer().selectedFeatures() if f[self.run_fieldbox.currentField()]==self.current_run()]
+        print(sects)
+        print(f_lines)
 
+        #indexes matching sects
+
+        self,
+        start=self.route_model.index(0,self.route_model.fieldIndex("sec"))
+        inds=self.route_model.match(start,Qt.EditRole,sec,hits=-1)
+        inds=self.route_model.match(role=Qt.EditRole,hits=-1)
+#match(const QModelIndex &, int , const QVariant &, int , Qt::MatchFlags ) const : QModelIndexList
+
+
+        rows=[i.row() for i in inds]
+        print(rows)
+        #self.route_model.index(row,sec_col)
+        #self.route_view.selectRow()
+
+        #item=self.table.findItems(sec,Qt.MatchExactly)[0] for qtableview
+
+
+
+        #self.routes_view.selectAll()?clearSelection
+
+    def add_from_feats(self):
+
+        d={'run':self.current_run(),'note':'from feats'}
+        
+        sf=self.network_box.currentLayer().selectedFeatures()
+        if len(sf)>1:
+            iface.messageBar().pushMessage('fitting tool:more than 1 feature of network layer selected.')
+            return
+        if sf:
+            d.update({'sec':sf[0][self.sec_fieldbox.currentField()]})
+
+        sf=self.readings_box.currentLayer().selectedFeatures()
+
+        if sf:
+            f_lines=[f[self.f_line_fieldbox.currentField()] for f in sf if f[self.run_fieldbox.currentField()]==self.current_run()]#f_lines of features in run
+            if f_lines:
+                d.update({'s_line':min(f_lines),'e_line':max(f_lines)})           
+        
+        self.dd.insert_into_routes(d)
+        self.route_model.select()
+            
 
     def check_connected(self):
         if self.dd.con:
@@ -147,13 +247,14 @@ class routes_widget(QWidget,rw):
 
     def refit_all(self):
         if self.check_connected():
-            self.dd.refit_runs(self.dd.get_runs())  
+            self.dd.refit_all()  
+            self.refit.emit()
 
 
     def refit_run(self):
         if self.check_connected():
             self.dd.refit_run(self.run_box.currentText())
-         
+            self.refit.emit()
     
 
 #select section and points of readings layer if set
@@ -163,44 +264,57 @@ class routes_widget(QWidget,rw):
         #self.route_model.i,
 
 
-    def autofit_run(self):
-        self.dd.autofit_run(self.run_box.currentText())
+    def automake_run(self):
+        self.dd.autofit_run(self.current_run())
         self.route_model.select()
         iface.messageBar().pushMessage('fitting tool:autofit.')
-        
+
+
+#might change run_box to subclass with search. May need to use something other than currentText()
+    def current_run(self):
+        return self.run_box.currentText()
+
+
+
+    def remove_slips(self):
+        self.dd.remove_slips(self.current_run())
+        self.route_model.select()
+        iface.messageBar().pushMessage('fitting tool:removed slip roads.')        
+
+
         
     def reconnect(self):
         self.route_model=betterTableModel(db=self.dd.db)
         self.route_model.setColorFunction(color_functions.routes_color)
-        self.route_model.setTable(self.dd.routes_table) 
+        self.route_model.setTable(self.table) 
         self.route_model.setEditStrategy(QSqlTableModel.OnFieldChange)
-        self.route_model.setSort(self.route_model.fieldIndex("s"),Qt.AscendingOrder)#sort by s
+        self.route_model.setSort(self.route_model.fieldIndex("s_line"),Qt.AscendingOrder)#sort by s
         
         self.route_view.setModel(self.route_model)
         self.route_view.setColumnHidden(self.route_model.fieldIndex("run"), True)#hide run column
         self.route_view.setColumnHidden(self.route_model.fieldIndex("pk"), True)#hide pk column
 
         self.route_view.resizeColumnsToContents()
-        self.get_runs()
+        self.refresh_runs()
         self.run_changed(self.run_box.currentIndex())
+
         
     #sets run_box
-    def get_runs(self):
+    def refresh_runs(self):
         self.run_box.clear()
         self.run_box.addItems(self.dd.get_runs())
 
         
     def save_route(self):
-        s=file_dialogs.save_file_dialog('.csv',default_name=self.run_box.currentText())
+        s=file_dialogs.save_file_dialog('.csv',default_name=self.current_run())
         if s:
-            table_view_to_csv.to_csv(self.route_view,s)#todo use quote charactor
-            #self.dd.query_to_csv('select * from routes where run=%(run)s',{'run':self.run_box.currentText()},force_quote='*' )
+            self.dd.download_route(s,self.current_run())
 
 
     def save_routes(self):
         s=file_dialogs.save_file_dialog('.csv',default_name='routes.csv')
         if s:
-            self.dd.download_routes(f)        
+            self.dd.download_routes(s)        
 
 
     def upload_routes(self):
@@ -223,28 +337,12 @@ class routes_widget(QWidget,rw):
         
         self.route_model.select()
             
-            
-    def add_row_dlg(self):
-        #def __init__(self,dd,network_box,sec_fieldbox,readings_box,run_fieldbox,f_line_fieldbox,run_box,vals=None,parent=None):
-
-        self.rd=row_dialog(self.dd,self.route_model,self.network_box,self.sec_fieldbox,self.readings_box,self.run_fieldbox,self.f_line_fieldbox,self.run_box,parent=self)
-        self.rd.show()
-        self.refresh_view()
-
         
     def refresh_view(self):
         self.route_model.select()
         self.route_view.viewport().update()
         
-
-    def edit_row(self):
-        i=self.route_view.selectionModel().selectedIndexes()[0]
-                #    def __init__(self,dd,network_box,sec_fieldbox,readings_box,run_fieldbox,f_line_fieldbox,run_box,vals=None,parent=None):
-
-        self.rd=row_dialog(self.dd,self.network_box,self.sec_fieldbox,self.readings_box,self.run_fieldbox,self.f_line_fieldbox,self.run_box,row_to_dict(i),self)
-        self.rd.show()            
-        self.refresh_view()
-            
+           
 
     def drop_selected_rows(self):
         self.drop_rows([r.row() for r in self.route_view.selectionModel().selectedRows()])
@@ -254,7 +352,9 @@ class routes_widget(QWidget,rw):
     def drop_rows(self,rows):
         for row in sorted(rows, reverse=True):#bottom to top because deleting row changes index
             self.route_model.removeRow(row)
-            
+        self.route_model.select()
+
+    
     #selects rows where section==sec
     def route_view_select(self,sec):
         inds=self.route_model.match(self.route_model.index(0,0),0,sec,-1)#list of model indexes where 1st col==sec 
@@ -285,7 +385,7 @@ class routes_widget(QWidget,rw):
         have_network=self.network_box.currentLayer() and self.sec_fieldbox.currentField()
         
         if have_network:
-            select_sections([i.data() for i in inds],self.network_box.currentLayer(),self.sec_fieldbox.currentField(),zoom=True)
+            layer_functions.select_sections([i.data() for i in inds],self.network_box.currentLayer(),self.sec_fieldbox.currentField(),zoom=True)
 
         if not have_network:
             iface.messageBar().pushMessage('fitting tool: Fields not set.')
@@ -297,21 +397,36 @@ class routes_widget(QWidget,rw):
         f_field=self.f_line_fieldbox.currentField()
         run=self.run_box.currentText()       
     
-        s_col=self.route_model.fieldIndex('s')
-        e_col=self.route_model.fieldIndex('e')
+        s_col=self.route_model.fieldIndex('s_line')
+        e_col=self.route_model.fieldIndex('e_line')
         
-        ids=[ch_to_id(r_layer,r_field,run,f_field,i.sibling(i.row(),s_col).data(),i.sibling(i.row(),e_col).data()) for i in inds]#list of lists
+        ids=[layer_functions.ch_to_id(r_layer,r_field,run,f_field,i.sibling(i.row(),s_col).data(),i.sibling(i.row(),e_col).data()) for i in inds]#list of lists
         if ids:
             ids2=[]
             for i in ids:
                 ids2+=i
                 
-            #r_layer.setSelectedFeatures(ids2)#qgis2
+           # r_layer.setSelectedFeatures(ids2)#qgis2
             r_layer.selectByIds(ids2)#qgis3
-            zoom_to_selected(r_layer)
+            layer_functions.zoom_to_selected(r_layer)
 
     
 #sets layer of fieldbox fb to layer then tries to set fb to field with name name
 def set_to(layer,fb,name=None):
     fb.setLayer(layer)
     fb.setField(name)
+
+
+#returns 1st layer in qgsMapLayerComboBox named name if exists
+def layer_box_find(layer_box,name):
+    i=layer_box.findText(name)
+    if i!=-1:
+        return layer_box.layer(i)
+
+                
+#set layer of qgsMapLayerComboBox to 1st layer named name if exists
+def set_layer_box_to(layer_box,name):
+    i=layer_box.findText(name)
+    if i!=-1:
+        layer_box.setLayer(layer_box.layer(i))
+    

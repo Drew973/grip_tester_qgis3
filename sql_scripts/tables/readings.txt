@@ -1,18 +1,22 @@
 
 
-create table if not exists gtest.readings(
-run varchar references gtest.run_info(run) on delete cascade on update cascade,
-ch float,
-left_skid float,
-speed float,
-air_temp int,
-surface_temp int,
-pt geometry,
-vect geometry,
-ps_text varchar[],
-ps sec_rev[],
-f_line int,
-primary key(run,f_line)
+create table if not exists readings(
+run varchar references gtest.run_info(run) on delete cascade on update cascade
+,ch float
+,left_skid float
+,speed float
+--air_temp int,
+--surface_temp int,
+,lat float
+,lon float
+,alt float
+,pt geometry('point',27700)
+,vect geometry('linestring',27700)
+,ps_text varchar[]
+,ps sec_rev[]
+,f_line int
+,ts timestamp
+,primary key(run,f_line)
 );
 
 create index on gtest.readings using gist(vect);

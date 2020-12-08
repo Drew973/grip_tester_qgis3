@@ -1,9 +1,24 @@
-CREATE OR REPLACE FUNCTION array_distinct(anyarray) 
+CREATE OR REPLACE FUNCTION array_distinct(arr anyarray) 
 RETURNS anyarray AS $$
 	BEGIN
 		return array(select distinct unnest(arr));
 	END;			
 $$ LANGUAGE plpgsql;
+
+
+--return True where a has non null elements				  
+CREATE OR REPLACE FUNCTION has_non_null(a anyarray) 
+RETURNS bool AS $$			  		
+	BEGIN	
+	 	if (select count(unnest) from unnest(a) where not unnest is null) = 0 then
+			return False;
+		else
+			return True;
+		end if;
+				  
+	END;			
+$$ LANGUAGE plpgsql;
+
 
 
 CREATE OR REPLACE FUNCTION array_min(anyarray) RETURNS anyelement AS
@@ -13,7 +28,7 @@ CREATE OR REPLACE FUNCTION array_min(anyarray) RETURNS anyelement AS
 CREATE OR REPLACE FUNCTION array_max(anyarray) RETURNS anyelement AS
 'SELECT max(i) FROM unnest($1) i' LANGUAGE sql IMMUTABLE;
 
-
+--not matrix multiplication. multiplying elements
 CREATE OR REPLACE FUNCTION array_multiply(a numeric[],b numeric[]) 
 RETURNS numeric[] AS $$
 	 BEGIN	
@@ -30,12 +45,10 @@ RETURNS int[] AS $$
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION array_mean(a float[]) 
-RETURNS float AS $$
-	DECLARE
-		s float=sum(b) from unnest(a) b;
+CREATE OR REPLACE FUNCTION array_avg(a anyarray) 
+RETURNS anyelement AS $$
 	 BEGIN	
-	 	return s/cardinality(a);
+	 	return avg(unnest) from (select unnest(a))u;
 	END;			
 $$ LANGUAGE plpgsql;
 
@@ -56,7 +69,7 @@ $$ LANGUAGE plpgsql;
 									 
 
 --make array into ranges of values separated by dist									 
-CREATE OR REPLACE FUNCTION array_cluster_int(a int[],dist int) 
+CREATE OR REPLACE FUNCTION array_cluster(a int[],dist int) 
 RETURNS int4range[] AS $$
 	Declare
 	v int;

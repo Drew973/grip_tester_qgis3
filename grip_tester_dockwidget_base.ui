@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>372</width>
-    <height>729</height>
+    <width>789</width>
+    <height>550</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -24,7 +24,10 @@
     <item>
      <widget class="QTabWidget" name="tabs">
       <property name="currentIndex">
-       <number>4</number>
+       <number>5</number>
+      </property>
+      <property name="tabBarAutoHide">
+       <bool>true</bool>
       </property>
       <widget class="QWidget" name="setup">
        <attribute name="title">
@@ -169,8 +172,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>100</width>
-             <height>30</height>
+             <width>98</width>
+             <height>28</height>
             </rect>
            </property>
            <attribute name="label">
@@ -311,26 +314,29 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>330</width>
-             <height>155</height>
+             <width>747</width>
+             <height>69</height>
             </rect>
            </property>
            <attribute name="label">
             <string>CSVs</string>
            </attribute>
-           <widget class="QPushButton" name="upload_csv_button">
-            <property name="geometry">
-             <rect>
-              <x>0</x>
-              <y>10</y>
-              <width>91</width>
-              <height>23</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string>Upload CSVs...</string>
-            </property>
-           </widget>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="QPushButton" name="upload_csv_button">
+              <property name="text">
+               <string>Upload CSVs...</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="upload_folder_button">
+              <property name="text">
+               <string>Upload Folder...</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </widget>
          </widget>
         </item>
@@ -421,13 +427,13 @@
       </widget>
       <widget class="QWidget" name="coverage">
        <attribute name="title">
-        <string>Coverage</string>
+        <string>Lengths and Missing</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_7">
         <item>
          <widget class="QPushButton" name="search_hmds_button">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Recalculate hmds column of requested sections table from selected hmd files.&lt;/p&gt;&lt;p&gt;Then recalculates requested,missed,surveyed lengths.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Recalculate hmds column of requested table from selected hmd files.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>Search hmds...</string>
@@ -437,15 +443,15 @@
         <item>
          <widget class="QToolBox" name="coverage_toolbox">
           <property name="currentIndex">
-           <number>3</number>
+           <number>2</number>
           </property>
           <widget class="QWidget" name="sections">
            <property name="geometry">
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>330</width>
-             <height>502</height>
+             <width>747</width>
+             <height>350</height>
             </rect>
            </property>
            <attribute name="label">
@@ -464,7 +470,7 @@
               <item>
                <widget class="QRadioButton" name="show_all_button">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show all requested sections.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show entire requested table&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
                  <string>All</string>
@@ -474,13 +480,23 @@
               <item>
                <widget class="QRadioButton" name="show_missing_button">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show only sections not in a hmd file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show sections of requested table that are not in hmd files.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
                  <string>Missing</string>
                 </property>
                 <property name="checked">
                  <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="partly_missing_button">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show sections of requested table that are in hmd files but have missing readings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>Partly Missing</string>
                 </property>
                </widget>
               </item>
@@ -503,8 +519,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>330</width>
-             <height>502</height>
+             <width>747</width>
+             <height>350</height>
             </rect>
            </property>
            <attribute name="label">
@@ -532,8 +548,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>330</width>
-             <height>502</height>
+             <width>747</width>
+             <height>350</height>
             </rect>
            </property>
            <attribute name="label">
@@ -559,38 +575,27 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="page_3">
-           <property name="geometry">
-            <rect>
-             <x>0</x>
-             <y>0</y>
-             <width>330</width>
-             <height>502</height>
-            </rect>
-           </property>
-           <attribute name="label">
-            <string>View Benchmarks</string>
-           </attribute>
-           <attribute name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;tools for making submission sheet&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_3">
-            <item>
-             <widget class="QTableView" name="benchmarks_view">
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;benchmarks view for creating submission sheet.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="copy_benchmarks_button">
-              <property name="text">
-               <string>Copy to clipboard</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_4">
+       <attribute name="title">
+        <string>Benchmarks</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_9">
+        <item>
+         <widget class="QTableView" name="benchmarks_view">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;benchmarks view for creating submission sheet.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="copy_benchmarks_button">
+          <property name="text">
+           <string>Copy to clipboard</string>
+          </property>
          </widget>
         </item>
        </layout>

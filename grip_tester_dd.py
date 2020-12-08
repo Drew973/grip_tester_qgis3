@@ -107,6 +107,26 @@ class grip_dd(database_dialog):
             return e
 
 
+    def upload_runs(self,runs):
+        for f in runs:
+            self.upload_run(f)
+
+
+    def upload_run(self,f):
+        self.sql('delete from gtest.staging;')
+        self.sql('ALTER SEQUENCE gtest.staging_f_line_seq RESTART WITH 1;')#reset f_line column of staging
+        with open(f,'r') as c:
+            self.cur.copy_from(c,'gtest.staging',columns=['r'])
+        self.sql('select staging_to_readings(%(run)s)',{'run':self.generate_run_name(f)})
+        return True
+
+
+#makes unique run name from filename f
+    def generate_run_name(self,f):
+        n=path.splitext(path.basename(f))[0]
+        return self.sql('select generate_name(%(n)s)',{'n':n},ret=True)[0]['generate_name']
+        
+        
     def drop_runs(self,runs):
         runs='{'+','.join(runs)+'}'
         self.sql('delete from gtest.run_info where run =any(%(runs)s::varchar[])',{'runs':runs})
@@ -114,19 +134,23 @@ class grip_dd(database_dialog):
 
     def refit_run(self,run):
         #self.cancelable_task(self.sql,{'q':'select refit_run(%(run)s);','args':run},'grip tester tool:refitting run')
-        q='select gtest.refit_run(%(run)s);select gtest.resize_run(%(run)s);'        
-        self.cancelable_query(q=q,args={'run':run},text='refitting run:'+run,sucess_message='grip tester tool:refit run:'+run)
+        self.cancelable_query(q='select gtest.process(%(run)s);',args={'run':run},text='processing run:'+run,sucess_message='grip tester tool:refit run:'+run)
 
 
-    def refit_runs(self,runs):        
-        self.cancelable_queries(queries=['select gtest.refit_all();','select gtest.resize_all();'],args=None,text='refitting all runs',sucess_message='grip tester tool:refit runs')
+    def refit_all(self):        
+        self.cancelable_query(q='select gtest.process()',text='processing all runs:',args=None,sucess_message='grip tester tool:processed all runs')
 
 
     def get_runs(self):
         res=self.sql('select run from gtest.run_info order by run',ret=True)
         return [r['run'] for r in res]
 
+
+    def insert_into_routes(self,d):
+        self.sql('insert into gtest.routes(%s) values (%s)'%(','.join(d.keys()),','.join(['%('+k+')s' for k in d.keys()])),d)
+
     
+            
 #parse line of run csv
     #n=int line number
 def read_line(line,f_line,run):

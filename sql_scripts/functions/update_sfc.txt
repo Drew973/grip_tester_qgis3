@@ -1,0 +1,40 @@
+
+--updates the sfc value in fitted based on benchmarks
+
+CREATE OR REPLACE FUNCTION update_sfc() 
+	RETURNS void AS $$
+	Declare
+	--correction_factors is view.
+
+		early float = early*grip_to_sfc from gtest.correction_factors;
+		mid float = mid*grip_to_sfc from gtest.correction_factors;
+		late float = late*grip_to_sfc from gtest.correction_factors;
+
+	BEGIN
+	--update sfc in fitted
+	update gtest.fitted set sfc=case
+	when (select season from gtest.run_info as ri where ri.run=fitted.run)='early' then gn*early 
+	when (select season from gtest.run_info as ri where ri.run=fitted.run)='mid' then gn*mid 
+ 	when (select season from gtest.run_info as ri where ri.run=fitted.run)='late' then gn*late
+        end;
+
+	END;			
+$$ LANGUAGE plpgsql;
+
+
+
+CREATE OR REPLACE FUNCTION update_sfc(rn varchar) 
+	RETURNS void AS $$
+	Declare
+		season test_season = season from gtest.run_info as ri where ri.run=rn;
+		f float = case when season='early' then (select early*grip_to_sfc from gtest.correction_factors)
+						when season='mid' then (select mid*grip_to_sfc from gtest.correction_factors)
+						when season='late' then (select late*grip_to_sfc from gtest.correction_factors)
+						end;
+
+	BEGIN
+	update gtest.fitted set sfc=gn*f where run=rn;
+	END;			
+$$ LANGUAGE plpgsql;
+
+alter function update_sfc(varchar) set search_path=gtest,public;

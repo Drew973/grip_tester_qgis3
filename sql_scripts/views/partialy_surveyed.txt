@@ -1,0 +1,27 @@
+create view partialy_surveyed as
+select road_class(sec) as road_class,sec as section,right(left(array_agg(xsp)::varchar,-1),-1) as direction,gtest.make_comment(sec) as Comment from gtest.requested 
+where cardinality(hmds)>0 and (select count (sec) from gtest.resized where gtest.resized.sec=gtest.requested.sec and gtest.resized.reversed=gtest.requested.reversed and sfc is null)>1 
+group by sec;
+
+
+set search_path to gtest,public;
+
+drop view if exists partialy_surveyed;
+
+create view partialy_surveyed as
+select road_class(sec) as road_class
+,sec as section
+,right(left(array_agg(xsp)::varchar,-1),-1) as direction
+--,gtest.make_comment(sec) as Comment
+
+,array_agg(note) as notes
+
+,(select sum(abs(e_ch-s_ch)) from resized where resized.sec=requested.sec and sfc is null) as missing_length
+,(select sum(abs(e_ch-s_ch)) from resized where resized.sec=requested.sec) as requested_length
+
+from gtest.requested 
+where cardinality(hmds)>0 and (select count (sec) from gtest.resized where gtest.resized.sec=gtest.requested.sec and gtest.resized.reversed=gtest.requested.reversed and sfc is null)>1 
+
+group by sec;
+			 
+select * from partialy_surveyed
